@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css"><link rel="stylesheet" href="css/L.Control.Locate.min.css">
+        <link rel="stylesheet" href="css/qgis2web.css"><link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet-control-geocoder.Geocoder.css">
+        <link rel="stylesheet" href="css/leaflet-measure.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title></title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script><script src="js/L.Control.Locate.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet-control-geocoder.Geocoder.js"></script>
+        <script src="js/leaflet-measure.js"></script>
+        <script src="js/proj4.js"></script>
+        <script src="js/proj4leaflet.js"></script>
+        <script src="data/netherlands_province_1.js"></script>
+        <script src="data/ZonneparkParkgrens_2.js"></script>
+        <script>
+        var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+
+            if (e.target.feature.geometry.type === 'LineString') {
+              highlightLayer.setStyle({
+                color: '#ffff00',
+              });
+            } else {
+              highlightLayer.setStyle({
+                fillColor: '#ffff00',
+                fillOpacity: 1
+              });
+            }
+            highlightLayer.openPopup();
+        }
+        var crs = new L.Proj.CRS('EPSG:3857', '+proj=merc +a=6378137 +b=6378137 +lat_ts=0 +lon_0=0 +x_0=0 +y_0=0 +k=1 +units=m +nadgrids=@null +wktext +no_defs', {
+            resolutions: [2800, 1400, 700, 350, 175, 84, 42, 21, 11.2, 5.6, 2.8, 1.4, 0.7, 0.35, 0.14, 0.07],
+        });
+        var map = L.map('map', {
+            crs: crs,
+            continuousWorld: false,
+            worldCopyJump: false, 
+            zoomControl:true, maxZoom:28, minZoom:1
+        })
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        L.control.locate({locateOptions: {maxZoom: 19}}).addTo(map);
+        var measureControl = new L.Control.Measure({
+            position: 'topleft',
+            primaryLengthUnit: 'meters',
+            secondaryLengthUnit: 'kilometers',
+            primaryAreaUnit: 'sqmeters',
+            secondaryAreaUnit: 'hectares'
+        });
+        measureControl.addTo(map);
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0]
+        .innerHTML = '';
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0]
+        .className += ' fas fa-ruler';
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+            if (bounds_group.getLayers().length) {
+                map.fitBounds(bounds_group.getBounds());
+            }
+        }
+        map.createPane('pane_GoogleMaps_0');
+        map.getPane('pane_GoogleMaps_0').style.zIndex = 400;
+        var layer_GoogleMaps_0 = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            pane: 'pane_GoogleMaps_0',
+            opacity: 1.0,
+            attribution: '',
+            minZoom: 1,
+            maxZoom: 28,
+        });
+        layer_GoogleMaps_0;
+        map.addLayer(layer_GoogleMaps_0);
+        function pop_netherlands_province_1(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2"><strong>gml_id</strong><br />' + (feature.properties['gml_id'] !== null ? autolinker.link(feature.properties['gml_id'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>nationalCo</strong><br />' + (feature.properties['nationalCo'] !== null ? autolinker.link(feature.properties['nationalCo'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>localId</strong><br />' + (feature.properties['localId'] !== null ? autolinker.link(feature.properties['localId'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">namespace</th>\
+                        <td>' + (feature.properties['namespace'] !== null ? autolinker.link(feature.properties['namespace'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">LocalisedC</th>\
+                        <td>' + (feature.properties['LocalisedC'] !== null ? autolinker.link(feature.properties['LocalisedC'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Country</th>\
+                        <td>' + (feature.properties['Country'] !== null ? autolinker.link(feature.properties['Country'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">language</th>\
+                        <td>' + (feature.properties['language'] !== null ? autolinker.link(feature.properties['language'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">sourceOfNa</th>\
+                        <td>' + (feature.properties['sourceOfNa'] !== null ? autolinker.link(feature.properties['sourceOfNa'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">pronunciat</th>\
+                        <td>' + (feature.properties['pronunciat'] !== null ? autolinker.link(feature.properties['pronunciat'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">text</th>\
+                        <td>' + (feature.properties['text'] !== null ? autolinker.link(feature.properties['text'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">script</th>\
+                        <td>' + (feature.properties['script'] !== null ? autolinker.link(feature.properties['script'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">transliter</th>\
+                        <td>' + (feature.properties['transliter'] !== null ? autolinker.link(feature.properties['transliter'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">residenceO</th>\
+                        <td>' + (feature.properties['residenceO'] !== null ? autolinker.link(feature.properties['residenceO'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">residenc_1</th>\
+                        <td>' + (feature.properties['residenc_1'] !== null ? autolinker.link(feature.properties['residenc_1'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">residenc_2</th>\
+                        <td>' + (feature.properties['residenc_2'] !== null ? autolinker.link(feature.properties['residenc_2'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">residenc_3</th>\
+                        <td>' + (feature.properties['residenc_3'] !== null ? autolinker.link(feature.properties['residenc_3'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">geometry</th>\
+                        <td>' + (feature.properties['geometry'] !== null ? autolinker.link(feature.properties['geometry'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">beginLifes</th>\
+                        <td>' + (feature.properties['beginLifes'] !== null ? autolinker.link(feature.properties['beginLifes'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">boundary</th>\
+                        <td>' + (feature.properties['boundary'] !== null ? autolinker.link(feature.properties['boundary'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_netherlands_province_1_0(feature) {
+            switch(String(feature.properties['text'])) {
+                case 'Drenthe':
+                    return {
+                pane: 'pane_netherlands_province_1',
+                opacity: 1,
+                color: 'rgba(226,163,100,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 4.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                case 'Flevoland':
+                    return {
+                pane: 'pane_netherlands_province_1',
+                opacity: 1,
+                color: 'rgba(65,114,237,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 4.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                case 'Fryslân':
+                    return {
+                pane: 'pane_netherlands_province_1',
+                opacity: 1,
+                color: 'rgba(41,220,100,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 4.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                case 'Gelderland':
+                    return {
+                pane: 'pane_netherlands_province_1',
+                opacity: 1,
+                color: 'rgba(50,209,29,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 4.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                case 'Groningen':
+                    return {
+                pane: 'pane_netherlands_province_1',
+                opacity: 1,
+                color: 'rgba(234,84,149,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 4.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                case 'Limburg':
+                    return {
+                pane: 'pane_netherlands_province_1',
+                opacity: 1,
+                color: 'rgba(168,211,107,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 4.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                case 'Noord-Brabant':
+                    return {
+                pane: 'pane_netherlands_province_1',
+                opacity: 1,
+                color: 'rgba(142,32,205,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 4.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                case 'Noord-Holland':
+                    return {
+                pane: 'pane_netherlands_province_1',
+                opacity: 1,
+                color: 'rgba(214,204,13,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 4.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                case 'Overijssel':
+                    return {
+                pane: 'pane_netherlands_province_1',
+                opacity: 1,
+                color: 'rgba(132,206,233,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 4.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                case 'Utrecht':
+                    return {
+                pane: 'pane_netherlands_province_1',
+                opacity: 1,
+                color: 'rgba(227,42,208,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 4.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                case 'Zeeland':
+                    return {
+                pane: 'pane_netherlands_province_1',
+                opacity: 1,
+                color: 'rgba(211,33,26,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 4.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                case 'Zuid-Holland':
+                    return {
+                pane: 'pane_netherlands_province_1',
+                opacity: 1,
+                color: 'rgba(13,228,185,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 4.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                default:
+                    return {
+                pane: 'pane_netherlands_province_1',
+                opacity: 1,
+                color: 'rgba(99,75,206,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 4.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_netherlands_province_1');
+        map.getPane('pane_netherlands_province_1').style.zIndex = 401;
+        map.getPane('pane_netherlands_province_1').style['mix-blend-mode'] = 'normal';
+        var layer_netherlands_province_1 = new L.geoJson(json_netherlands_province_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_netherlands_province_1',
+            layerName: 'layer_netherlands_province_1',
+            pane: 'pane_netherlands_province_1',
+            onEachFeature: pop_netherlands_province_1,
+            style: style_netherlands_province_1_0,
+        });
+        bounds_group.addLayer(layer_netherlands_province_1);
+        map.addLayer(layer_netherlands_province_1);
+        function pop_ZonneparkParkgrens_2(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2"><strong>OBJECTID</strong><br />' + (feature.properties['OBJECTID'] !== null ? autolinker.link(feature.properties['OBJECTID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">ID</th>\
+                        <td>' + (feature.properties['ID'] !== null ? autolinker.link(feature.properties['ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">data_bron</th>\
+                        <td>' + (feature.properties['data_bron'] !== null ? autolinker.link(feature.properties['data_bron'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">gemeente</th>\
+                        <td>' + (feature.properties['gemeente'] !== null ? autolinker.link(feature.properties['gemeente'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">naam_park</th>\
+                        <td>' + (feature.properties['naam_park'] !== null ? autolinker.link(feature.properties['naam_park'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">status</th>\
+                        <td>' + (feature.properties['status'] !== null ? autolinker.link(feature.properties['status'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">initiatiefnemer</th>\
+                        <td>' + (feature.properties['initiatiefnemer'] !== null ? autolinker.link(feature.properties['initiatiefnemer'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">oppervlakte_ha</th>\
+                        <td>' + (feature.properties['oppervlakte_ha'] !== null ? autolinker.link(feature.properties['oppervlakte_ha'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">vermogen_Mwp</th>\
+                        <td>' + (feature.properties['vermogen_Mwp'] !== null ? autolinker.link(feature.properties['vermogen_Mwp'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">opp_calc_ha</th>\
+                        <td>' + (feature.properties['opp_calc_ha'] !== null ? autolinker.link(feature.properties['opp_calc_ha'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Shape.STArea__</th>\
+                        <td>' + (feature.properties['Shape.STArea__'] !== null ? autolinker.link(feature.properties['Shape.STArea__'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Shape.STLength__</th>\
+                        <td>' + (feature.properties['Shape.STLength__'] !== null ? autolinker.link(feature.properties['Shape.STLength__'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_ZonneparkParkgrens_2_0(feature) {
+            if (feature.properties['vermogen_Mwp'] >= 0.100000 && feature.properties['vermogen_Mwp'] <= 20.000000 ) {
+                return {
+                pane: 'pane_ZonneparkParkgrens_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(215,25,28,1.0)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['vermogen_Mwp'] >= 20.000000 && feature.properties['vermogen_Mwp'] <= 40.000000 ) {
+                return {
+                pane: 'pane_ZonneparkParkgrens_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(237,110,67,1.0)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['vermogen_Mwp'] >= 40.000000 && feature.properties['vermogen_Mwp'] <= 60.000000 ) {
+                return {
+                pane: 'pane_ZonneparkParkgrens_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(253,186,110,1.0)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['vermogen_Mwp'] >= 60.000000 && feature.properties['vermogen_Mwp'] <= 80.000000 ) {
+                return {
+                pane: 'pane_ZonneparkParkgrens_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(254,232,164,1.0)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['vermogen_Mwp'] >= 80.000000 && feature.properties['vermogen_Mwp'] <= 100.000000 ) {
+                return {
+                pane: 'pane_ZonneparkParkgrens_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(231,245,183,1.0)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['vermogen_Mwp'] >= 100.000000 && feature.properties['vermogen_Mwp'] <= 120.000000 ) {
+                return {
+                pane: 'pane_ZonneparkParkgrens_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(183,226,168,1.0)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['vermogen_Mwp'] >= 120.000000 && feature.properties['vermogen_Mwp'] <= 140.000000 ) {
+                return {
+                pane: 'pane_ZonneparkParkgrens_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(116,182,173,1.0)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['vermogen_Mwp'] >= 140.000000 && feature.properties['vermogen_Mwp'] <= 155.000000 ) {
+                return {
+                pane: 'pane_ZonneparkParkgrens_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(43,131,186,1.0)',
+                interactive: true,
+            }
+            }
+        }
+        map.createPane('pane_ZonneparkParkgrens_2');
+        map.getPane('pane_ZonneparkParkgrens_2').style.zIndex = 402;
+        map.getPane('pane_ZonneparkParkgrens_2').style['mix-blend-mode'] = 'normal';
+        var layer_ZonneparkParkgrens_2 = new L.geoJson(json_ZonneparkParkgrens_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_ZonneparkParkgrens_2',
+            layerName: 'layer_ZonneparkParkgrens_2',
+            pane: 'pane_ZonneparkParkgrens_2',
+            onEachFeature: pop_ZonneparkParkgrens_2,
+            style: style_ZonneparkParkgrens_2_0,
+        });
+        bounds_group.addLayer(layer_ZonneparkParkgrens_2);
+        map.addLayer(layer_ZonneparkParkgrens_2);
+        var osmGeocoder = new L.Control.Geocoder({
+            collapsed: true,
+            position: 'topleft',
+            text: 'Search',
+            title: 'Testing'
+        }).addTo(map);
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .className += ' fa fa-search';
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .title += 'Search for a place';
+        var baseMaps = {};
+        L.control.layers(baseMaps,{'ZonneparkParkgrens<br /><table><tr><td style="text-align: center;"><img src="legend/ZonneparkParkgrens_2_0200.png" /></td><td>0 - 20</td></tr><tr><td style="text-align: center;"><img src="legend/ZonneparkParkgrens_2_20401.png" /></td><td>20 - 40</td></tr><tr><td style="text-align: center;"><img src="legend/ZonneparkParkgrens_2_40602.png" /></td><td>40 - 60</td></tr><tr><td style="text-align: center;"><img src="legend/ZonneparkParkgrens_2_60803.png" /></td><td>60 - 80</td></tr><tr><td style="text-align: center;"><img src="legend/ZonneparkParkgrens_2_801004.png" /></td><td>80 - 100</td></tr><tr><td style="text-align: center;"><img src="legend/ZonneparkParkgrens_2_1001205.png" /></td><td>100 - 120</td></tr><tr><td style="text-align: center;"><img src="legend/ZonneparkParkgrens_2_1201406.png" /></td><td>120 - 140</td></tr><tr><td style="text-align: center;"><img src="legend/ZonneparkParkgrens_2_1401557.png" /></td><td>140 - 155</td></tr></table>': layer_ZonneparkParkgrens_2,'netherlands_province<br /><table><tr><td style="text-align: center;"><img src="legend/netherlands_province_1_Drenthe0.png" /></td><td>Drenthe</td></tr><tr><td style="text-align: center;"><img src="legend/netherlands_province_1_Flevoland1.png" /></td><td>Flevoland</td></tr><tr><td style="text-align: center;"><img src="legend/netherlands_province_1_Fryslân2.png" /></td><td>Fryslân</td></tr><tr><td style="text-align: center;"><img src="legend/netherlands_province_1_Gelderland3.png" /></td><td>Gelderland</td></tr><tr><td style="text-align: center;"><img src="legend/netherlands_province_1_Groningen4.png" /></td><td>Groningen</td></tr><tr><td style="text-align: center;"><img src="legend/netherlands_province_1_Limburg5.png" /></td><td>Limburg</td></tr><tr><td style="text-align: center;"><img src="legend/netherlands_province_1_NoordBrabant6.png" /></td><td>Noord-Brabant</td></tr><tr><td style="text-align: center;"><img src="legend/netherlands_province_1_NoordHolland7.png" /></td><td>Noord-Holland</td></tr><tr><td style="text-align: center;"><img src="legend/netherlands_province_1_Overijssel8.png" /></td><td>Overijssel</td></tr><tr><td style="text-align: center;"><img src="legend/netherlands_province_1_Utrecht9.png" /></td><td>Utrecht</td></tr><tr><td style="text-align: center;"><img src="legend/netherlands_province_1_Zeeland10.png" /></td><td>Zeeland</td></tr><tr><td style="text-align: center;"><img src="legend/netherlands_province_1_ZuidHolland11.png" /></td><td>Zuid-Holland</td></tr><tr><td style="text-align: center;"><img src="legend/netherlands_province_1_12.png" /></td><td></td></tr></table>': layer_netherlands_province_1,"Google Maps": layer_GoogleMaps_0,}).addTo(map);
+        setBounds();
+        var i = 0;
+        layer_netherlands_province_1.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['text'] !== null?String('<div style="color: #000000; font-size: 10pt; font-family: \'MS Shell Dlg 2\', sans-serif;">' + layer.feature.properties['text']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_netherlands_province_1'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        resetLabels([layer_netherlands_province_1]);
+        map.on("zoomend", function(){
+            resetLabels([layer_netherlands_province_1]);
+        });
+        map.on("layeradd", function(){
+            resetLabels([layer_netherlands_province_1]);
+        });
+        map.on("layerremove", function(){
+            resetLabels([layer_netherlands_province_1]);
+        });
+        </script>
+    </body>
+</html>
